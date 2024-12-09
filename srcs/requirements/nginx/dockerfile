@@ -1,0 +1,17 @@
+FROM alpine:3.19.2
+
+RUN apk update && apk add nginx && apk add openssl
+
+COPY ./conf/nginx.conf /etc/nginx/nginx.conf
+
+COPY ./conf/http.d /etc/nginx/http.d
+
+COPY ./tools /etc/nginx/tools
+
+RUN chmod +rwx /etc/nginx/tools/nginx.sh
+
+RUN mkdir /etc/nginx/ssl
+
+EXPOSE 443
+
+ENTRYPOINT ["/etc/nginx/tools/nginx.sh"]

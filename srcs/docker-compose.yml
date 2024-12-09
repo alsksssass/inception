@@ -1,0 +1,152 @@
+services:
+  nginx:
+    container_name: nginx
+    init: true
+    build:
+      context: ./requirements/nginx/
+      dockerfile: Dockerfile
+    image: nginx
+    networks:
+      - inception
+    ports:
+      - 443:443
+    volumes:
+      - wp-wordpress:/var/lib/nginx/wordpress
+    restart: on-failure
+  wordpress:
+    container_name: wordpress
+    image: wordpress
+    init: true
+    build:
+      context: ./requirements/wordpress/
+      dockerfile: Dockerfile
+    networks:
+      - inception
+    ports:
+      - 9000:9000
+    volumes:
+      - wp-wordpress:/var/lib/nginx/wordpress
+    environment:
+      WORDPRESS_URL: ${WORDPRESS_URL}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
+      WORDPRESS_ADMIN_NAME: ${WORDPRESS_ADMIN_NAME}
+      WORDPRESS_ADMIN_PWD: ${WORDPRESS_ADMIN_PWD}
+      WORDPRESS_ADMIN_EMAIL: ${WORDPRESS_ADMIN_EMAIL}
+      WORDPRESS_USER_NAME: ${WORDPRESS_USER_NAME}
+      WORDPRESS_USER_PWD: ${WORDPRESS_USER_PWD}
+      WORDPRESS_USER_EMAIL: ${WORDPRESS_USER_EMAIL}
+    restart: on-failure
+  mariadb:
+    container_name: mariadb
+    image: mariadb
+    init: true
+    build:
+      context: ./requirements/mariadb/
+      dockerfile: Dockerfile
+    networks:
+      - inception
+    volumes:
+      - wp-database:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    restart: on-failure
+  adminer:
+    container_name: adminer
+    image: adminer
+    build:
+      context: ./requirements/bonus/adminer/
+      dockerfile: Dockerfile
+    networks:
+      - inception
+    ports:
+      - 8080:8080
+    restart: on-failure
+  redis:
+    container_name: redis
+    image: redis
+    init: true
+    build:
+      context: ./requirements/bonus/redis/
+      dockerfile: Dockerfile
+    networks:
+      - inception
+    restart: on-failure
+  lighttpd:
+    container_name: lighttpd
+    image: lighttpd
+    init: true
+    build:
+      context: ./requirements/bonus/lighttpd/
+      dockerfile: Dockerfile
+    networks:
+      - inception
+    ports:
+      - 10000:10000
+    restart: on-failure
+  ftp:
+    container_name: ftp
+    image: ftp
+    build:
+      context: ./requirements/bonus/ftp/
+      dockerfile: Dockerfile
+    networks:
+      - inception
+    ports:
+      - 2121:2121
+      - 50001-50005:50001-50005
+    restart: on-failure
+    volumes:
+      - wp-wordpress:/var/lib/nginx/wordpress
+    environment:
+      FTP_PASSWORD: ${FTP_PASSWORD}
+  code:
+    init: true
+    container_name: code_server
+    image: code_server
+    build:
+      context: ./requirements/bonus/code_server
+      dockerfile: Dockerfile
+    volumes:
+      - cd-data:/home/coder/
+      - /home/sabyun/Desktop:/home/coder/project
+    environment:
+      - DOCKER_USER=${USER}
+    networks:
+      - inception
+    ports:
+      - 12000:8080
+    restart: on-failure
+
+networks:
+  inception:
+    name: inception
+    driver: bridge
+
+volumes:
+  wp-database:
+    name: wp-database
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/sabyun/data/mariadb
+  wp-wordpress:
+    name : wp-wordpress
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/sabyun/data/wordpress
+  cd-data:
+    name : cd-data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/sabyun/data/code_server

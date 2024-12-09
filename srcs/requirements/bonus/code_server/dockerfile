@@ -1,0 +1,37 @@
+FROM debian:latest
+
+# build-essential \
+RUN apt-get update && apt-get install -y \
+    curl \
+    systemd \ 
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fOL https://github.com/coder/code-server/releases/download/v4.90.3/code-server_4.90.3_amd64.deb
+RUN dpkg -i code-server_4.90.3_amd64.deb
+
+# 필요한 디렉토리 생성
+RUN mkdir -p /home/coder/.local /home/coder/.config /home/coder/project
+
+# 볼륨 마운트 포인트 설정
+# VOLUME ["/home/coder/.local", "/home/coder/.config", "/home/coder/project"]
+
+
+# 작업 디렉토리 설정
+WORKDIR /home/coder/project
+
+# 포트 노출
+EXPOSE 8080
+
+# 환경 변수 설정
+ENV DOCKER_USER=${USER}
+
+# 엔트리포인트 스크립트 복사 및 권한 설정
+COPY ./tools/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +rwx /usr/local/bin/docker-entrypoint.sh
+
+# 새로운 엔트리포인트 설정
+#ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# 기본 명령 설정
+CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "."]
